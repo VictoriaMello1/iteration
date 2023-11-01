@@ -1,0 +1,215 @@
+---
+title: "Strings and Factors"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+
+library(tidyverse)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuious.color = "viridis",
+  ggplot2.continuious.fill = "viridis"
+  
+)
+
+scale_color_discrete = scale_color_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+
+```{r}
+library(rvest)
+library(p8105.datasets)
+
+```
+
+
+## Strings and manipulations
+
+```{r}
+
+string_vec = c("my", "name", "is", "vicky")
+
+str_detect(string_vec, "vicky")
+str_detect(string_vec, "y")
+str_detect(string_vec, "Vicky")
+
+str_replace(string_vec, "vicky", "Victoria Mello")
+```
+
+```{r}
+string_vec = c(
+  "i think we all rule for participating",
+  "i think i have been caught",
+  "i think this will be quite fun actually",
+  "it will be fun, i think"
+  )
+
+str_detect(string_vec, "i think")
+str_detect(string_vec, "^i think")
+str_detect(string_vec, "i think$")
+
+```
+the ^ = at the beginning and the $ = at the end 
+
+
+```{r}
+string_vec = c(
+  "Time for a Pumpkin Spice Latte!",
+  "went to the #pumpkinpatch last weekend",
+  "Pumpkin Pie is obviously the best pie",
+  "SMASHING PUMPKINS -- LIVE IN CONCERT!!"
+  )
+
+str_detect(string_vec,"Pumpkin")
+
+str_detect(string_vec,"[Pp]umpkin")
+```
+the [Pp] is how you make it look for both upper and lowercase 
+
+```{r}
+string_vec = c(
+  '7th inning stretch',
+  '1st half soon to begin. Texas won the toss.',
+  'she is 5 feet 4 inches tall',
+  '3AM - cant sleep :('
+  )
+
+str_detect(string_vec, "[0-9]")
+str_detect(string_vec, "^[0-9]")
+str_detect(string_vec, "^[0-9][a-z]")
+
+```
+
+```{r}
+string_vec = c(
+  'Its 7:11 in the evening',
+  'want to go to 7-11?',
+  'my flight is AA711',
+  'NetBios: scanning ip 203.167.114.66'
+  )
+
+str_detect(string_vec, "7.11")
+```
+the . allows you to look for 711 separated by ANY SYMBOL (but not if theres no symbol)
+
+
+```{r}
+string_vec = c(
+  'The CI is [2, 5]',
+  ':-]',
+  ':-[',
+  'I found the answer on pages [6-7]'
+  )
+
+str_detect(string_vec, "\\[")
+```
+indicate that the thing you are looking for is a 'special character' with a double backslash \\
+
+
+## Factors 
+
+```{r}
+vec_sex = c("male", "male", "female", "female")
+vec_sex
+
+as.numeric(vec_sex)
+
+vec_sex = fct_relevel(vec_sex, "male")
+vec_sex
+
+as.numeric(vec_sex)
+
+```
+
+
+## NSDUH 
+
+```{r}
+nsduh_url = "https://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm" 
+
+table_marj = 
+  read_html(nsduh_url) %>% 
+  html_table() %>% 
+  first() %>% 
+  slice(-1)
+```
+
+--> This is not a tidy dataset! We need to tidy this data imported from web before working w it...
+
+```{r}
+marj_df = 
+  table_marj %>% 
+  select(-contains("P Value")) %>% 
+  pivot_longer(
+      -State,
+      names_to = "age_year",
+      values_to = "percent"
+  ) %>% 
+  separate(age_year, into = c("age", "year"), "\\(") %>% 
+   mutate(
+    year = str_replace(year, "\\)", ""),
+    percent = str_replace(percent, "[a-c]$", ""),
+    percent = as.numeric(percent)) %>% 
+  filter(!(State %in% c("Total U.S.", "Northeast", "Midwest", "South", "West")))
+
+marj_df |>
+  filter(age == "12-17") |> 
+  mutate(State = fct_reorder(State, percent)) |> 
+  ggplot(aes(x = State, y = percent, color = year)) + 
+    geom_point() + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+
+## NYC Resturant Inspections dataset 
+
+```{r}
+data("rest_inspec")
+rest_inspec
+```
+
+```{r}
+rest_inspec |> 
+  group_by(boro, grade) |> 
+  summarize(n = n()) |> 
+  pivot_wider(names_from = grade, values_from = n)
+```
+
+```{r}
+rest_inspec =
+  rest_inspec |>
+  filter(grade %in% c("A", "B", "C"), boro != "Missing") |> 
+  mutate(boro = str_to_title(boro))
+```
+
+
+Lets look at Pizza Places:
+
+```{r}
+rest_inspec %>% 
+  filter(str_detect(dba, "PIZZA")) %>% 
+  count(boro)
+
+```
+
+```{r}
+rest_inspec %>% 
+  filter(str_detect(dba, "PIZZA")) %>% 
+  mutate(boro = fct_infreq(boro)) %>% 
+  ggplot(aes(x = boro, fill = grade)) + 
+  geom_bar()
+
+```
+--> Jeff likes fct_reoder bc it says that you want the average for the numeric variable to be the order they are in 
+** IF you wanted to do something like rename Manhattan "The City" you would use fct_recode(boro, "The City" = Manhattan))
