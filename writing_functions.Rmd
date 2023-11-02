@@ -1,5 +1,5 @@
 ---
-title: "Strings and Factors"
+title: "Writing Functions"
 output: github_document
 ---
 
@@ -27,189 +27,119 @@ scale_fill_discrete = scale_fill_viridis_d
 
 
 ```{r}
+library(tidyverse)
 library(rvest)
 library(p8105.datasets)
 
 ```
 
-
-## Strings and manipulations
-
+Set seed for reproducibility: 
 ```{r}
-
-string_vec = c("my", "name", "is", "vicky")
-
-str_detect(string_vec, "vicky")
-str_detect(string_vec, "y")
-str_detect(string_vec, "Vicky")
-
-str_replace(string_vec, "vicky", "Victoria Mello")
+set.seed(12345)
 ```
 
+# Z score functions
+
+Z scores subtract the mean and divide by the standard deviation
+
 ```{r}
-string_vec = c(
-  "i think we all rule for participating",
-  "i think i have been caught",
-  "i think this will be quite fun actually",
-  "it will be fun, i think"
+x_vec = rnorm(20, mean = 5, sd = .3)
+```
+
+Compute Z score for x_vec: 
+
+```{r}
+(x_vec - mean(x_vec)) / sd(x_vec)
+```
+
+Lets create a Function to do this Z score instead!
+
+```{r}
+z_scores = function(x) {
+  
+  if (!is.numeric(x)) {
+    stop("Argument x should be numeric")
+  } else if (length(x) == 1) {
+    stop("Z scores cannot be computed for length 1 vectors")
+  }
+  
+  z = mean(x) / sd(x)
+  
+  z
+}
+```
+if you tried to access this z variable it will not be in your global library - it will only exist inside this function 
+-- good practice to specify these arguments to make LOUD error messages when your function does not work properly 
+
+
+Check this function works: 
+```{r}
+z_scores(x_vec)
+```
+
+
+# Multiple outputs
+
+Write a function that returns mean and st dev from a sample of numbers
+
+```{r}
+mean_and_sd = function(x) {
+  
+  if (!is.numeric(x)) {
+    stop("Argument x should be numeric")
+  } else if (length(x) == 1) {
+    stop("Cannot be computed for length 1 vectors")
+  }
+  
+  mean_x = mean(x)
+  sd_x = sd(x)
+
+   tibble(
+    mean = mean_x, 
+    sd = sd_x
   )
-
-str_detect(string_vec, "i think")
-str_detect(string_vec, "^i think")
-str_detect(string_vec, "i think$")
-
+}
 ```
-the ^ = at the beginning and the $ = at the end 
 
+Check if this function works:
 
 ```{r}
-string_vec = c(
-  "Time for a Pumpkin Spice Latte!",
-  "went to the #pumpkinpatch last weekend",
-  "Pumpkin Pie is obviously the best pie",
-  "SMASHING PUMPKINS -- LIVE IN CONCERT!!"
+mean_and_sd(x_vec)
+```
+
+
+# Start getting means an SDs
+
+```{r}
+x_vec = rnorm(n = 30, mean = 5, sd = .5)
+
+tibble(
+    mean = mean(x_vec), 
+    sd = sd(x_vec)
   )
-
-str_detect(string_vec,"Pumpkin")
-
-str_detect(string_vec,"[Pp]umpkin")
 ```
-the [Pp] is how you make it look for both upper and lowercase 
+
+Lets write a funciton that uses 'n', a true mean, and true SD as inputs
 
 ```{r}
-string_vec = c(
-  '7th inning stretch',
-  '1st half soon to begin. Texas won the toss.',
-  'she is 5 feet 4 inches tall',
-  '3AM - cant sleep :('
+sim_mean_sd = function(n_obs, mu, sigma) {
+  x_vec = rnorm(n = n_obs, mean = mu, sd = sigma)
+  
+tibble(
+    mean = mean(x_vec), 
+    sd = sd(x_vec)
   )
-
-str_detect(string_vec, "[0-9]")
-str_detect(string_vec, "^[0-9]")
-str_detect(string_vec, "^[0-9][a-z]")
-
+}
 ```
+if i wanted to make this function have a contstant value for mean or sd i would specify this in the first line EX: sim_mean_sd = function(n_obs, mu = 2, sigma = .5)  
+-- then you would only need to specify the n_obs for the function to work bc mu and sigma are preset 
 
+
+Testing this sim_mean_sd function: 
 ```{r}
-string_vec = c(
-  'Its 7:11 in the evening',
-  'want to go to 7-11?',
-  'my flight is AA711',
-  'NetBios: scanning ip 203.167.114.66'
-  )
+sim_mean_sd(n_obs = 30, mu = 5, sigma = .5)
+sim_mean_sd(30, 5, .5)
 
-str_detect(string_vec, "7.11")
+sim_mean_sd(n_obs = 50, mu = 10, sigma = .5)
 ```
-the . allows you to look for 711 separated by ANY SYMBOL (but not if theres no symbol)
-
-
-```{r}
-string_vec = c(
-  'The CI is [2, 5]',
-  ':-]',
-  ':-[',
-  'I found the answer on pages [6-7]'
-  )
-
-str_detect(string_vec, "\\[")
-```
-indicate that the thing you are looking for is a 'special character' with a double backslash \\
-
-
-## Factors 
-
-```{r}
-vec_sex = c("male", "male", "female", "female")
-vec_sex
-
-as.numeric(vec_sex)
-
-vec_sex = fct_relevel(vec_sex, "male")
-vec_sex
-
-as.numeric(vec_sex)
-
-```
-
-
-## NSDUH 
-
-```{r}
-nsduh_url = "https://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm" 
-
-table_marj = 
-  read_html(nsduh_url) %>% 
-  html_table() %>% 
-  first() %>% 
-  slice(-1)
-```
-
---> This is not a tidy dataset! We need to tidy this data imported from web before working w it...
-
-```{r}
-marj_df = 
-  table_marj %>% 
-  select(-contains("P Value")) %>% 
-  pivot_longer(
-      -State,
-      names_to = "age_year",
-      values_to = "percent"
-  ) %>% 
-  separate(age_year, into = c("age", "year"), "\\(") %>% 
-   mutate(
-    year = str_replace(year, "\\)", ""),
-    percent = str_replace(percent, "[a-c]$", ""),
-    percent = as.numeric(percent)) %>% 
-  filter(!(State %in% c("Total U.S.", "Northeast", "Midwest", "South", "West")))
-
-marj_df |>
-  filter(age == "12-17") |> 
-  mutate(State = fct_reorder(State, percent)) |> 
-  ggplot(aes(x = State, y = percent, color = year)) + 
-    geom_point() + 
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
-```
-
-
-## NYC Resturant Inspections dataset 
-
-```{r}
-data("rest_inspec")
-rest_inspec
-```
-
-```{r}
-rest_inspec |> 
-  group_by(boro, grade) |> 
-  summarize(n = n()) |> 
-  pivot_wider(names_from = grade, values_from = n)
-```
-
-```{r}
-rest_inspec =
-  rest_inspec |>
-  filter(grade %in% c("A", "B", "C"), boro != "Missing") |> 
-  mutate(boro = str_to_title(boro))
-```
-
-
-Lets look at Pizza Places:
-
-```{r}
-rest_inspec %>% 
-  filter(str_detect(dba, "PIZZA")) %>% 
-  count(boro)
-
-```
-
-```{r}
-rest_inspec %>% 
-  filter(str_detect(dba, "PIZZA")) %>% 
-  mutate(boro = fct_infreq(boro)) %>% 
-  ggplot(aes(x = boro, fill = grade)) + 
-  geom_bar()
-
-```
---> Jeff likes fct_reoder bc it says that you want the average for the numeric variable to be the order they are in 
-** IF you wanted to do something like rename Manhattan "The City" you would use fct_recode(boro, "The City" = Manhattan))
+if you do not explicity name mu = 5 etc in the () then R assumes you are putting the numbers in the correct order you specified in the actual function 
