@@ -98,3 +98,34 @@ mean_and_sd = function(x) {
 }
 ```
 
+Applying the function 
+```{r}
+mean_and_sd(list_norm_samples$a)
+mean_and_sd(list_norm_samples$b)
+mean_and_sd(list_norm_samples$c)
+mean_and_sd(list_norm_samples$d)
+
+```
+
+It is easier to apply the function when you use a loop function or a for loop to keep track of all the elements of your input list and saves the results of applying the function to the output list 
+
+```{r}
+output = vector("list", length = 4)
+
+for (i in 1:4) {
+  output[[i]] = mean_and_sd(list_norm_samples[[i]])
+  
+}
+output # <-- can enter this in the Console to have output produced if not working here
+```
+
+
+# Use 'map' function -- map(your data inputs, function you want to apply to the inputs)
+
+This one line of code replaces the for loops we did above 
+```{r}
+output = map(list_norm_samples, mean_and_sd)
+
+output = map(list_norm_samples, summary)
+```
+

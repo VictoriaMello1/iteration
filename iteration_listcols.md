@@ -92,3 +92,89 @@ mean_and_sd = function(x) {
   )
 }
 ```
+
+Applying the function
+
+``` r
+mean_and_sd(list_norm_samples$a)
+```
+
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1  1.25  4.92
+
+``` r
+mean_and_sd(list_norm_samples$b)
+```
+
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1 0.690  9.30
+
+``` r
+mean_and_sd(list_norm_samples$c)
+```
+
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1  18.8  4.55
+
+``` r
+mean_and_sd(list_norm_samples$d)
+```
+
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1 -44.1  14.0
+
+It is easier to apply the function when you use a loop function or a for
+loop to keep track of all the elements of your input list and saves the
+results of applying the function to the output list
+
+``` r
+output = vector("list", length = 4)
+
+for (i in 1:4) {
+  output[[i]] = mean_and_sd(list_norm_samples[[i]])
+  
+}
+output # <-- can enter this in the Console to have output produced if not working here
+```
+
+    ## [[1]]
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1  1.25  4.92
+    ## 
+    ## [[2]]
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1 0.690  9.30
+    ## 
+    ## [[3]]
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1  18.8  4.55
+    ## 
+    ## [[4]]
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1 -44.1  14.0
+
+# Use ‘map’ function – map(your data inputs, function you want to apply to the inputs)
+
+This one line of code replaces the for loops we did above
+
+``` r
+output = map(list_norm_samples, mean_and_sd)
+
+output = map(list_norm_samples, summary)
+```
